@@ -10,13 +10,11 @@ def generate_user_exam():
     """
     Generate a random set of questions: 20 x 1-mark, 20 x 2-mark
     """
-    one_mark_qs = list(Question.objects.filter(marks=1))
-    two_mark_qs = list(Question.objects.filter(marks=2))
+    one_mark_qs = list(Question.objects.filter(marks=1).order_by('-id').values_list('id', flat=True)[:100])
+    
 
-    if len(one_mark_qs) < 20 or len(two_mark_qs) < 20:
-        raise ValueError("Not enough questions in the database.")
 
-    selected_questions = random.sample(one_mark_qs, 20) + random.sample(two_mark_qs, 20)
+    selected_questions = random.sample(one_mark_qs, 50) 
     random.shuffle(selected_questions)
     return selected_questions
 

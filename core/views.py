@@ -16,6 +16,7 @@ from .models import LoginAttempt, ExamSession, Question, UserResponse, ExamConfi
 from .utils import generate_user_exam
 from .utils import get_exam_session, set_exam_session, delete_exam_session
 from rest_framework.permissions import IsAdminUser
+from datetime import datetime
 
 import pytz
 
@@ -24,6 +25,8 @@ now = timezone.now().astimezone(IST)
 config = ExamConfig.objects.first() 
 
 # Fixed exam start/end time (we will not touch them)
+#exam_start = IST.localize(datetime(2025, 10, 26, 23, 21))  # 10:30 AM IST
+#exam_end = IST.localize(datetime(2025, 10, 26, 23, 50)) 
 exam_start = config.exam_start.astimezone(IST)
 submission_start_ist = config.submission_start.astimezone(IST)
 exam_end = config.exam_end.astimezone(IST)
@@ -73,7 +76,7 @@ class ExamDataAPI(APIView):
         user = get_object_or_404(User, username=rollno)
 
         # Check Redis first
-        print("Exam Config Times:", exam_start, submission_start_ist, exam_end,now)
+        print("Exam Config Times:", exam_start, exam_end,now)
         
 
         # Get or create exam session
@@ -99,21 +102,22 @@ class ExamDataAPI(APIView):
             session.save()
 
         # Timer
-        timer = max(int((session.end_time - timezone.now()).total_seconds()), 0)
+    
 
         # Serialize questions
         questions = session.questions.all()
         serializer = QuestionSerializer(questions, many=True, context={'session': session})
         response_data = {
             "username": user.username,
-            "timer": timer,
+            "start_time": exam_start,
+            "end_time": exam_end,
             "warnings": session.warnings,
             "penalties": session.total_penalties,
             "questions": serializer.data
         }
 
         # Cache in Redis until exam_end
-        set_exam_session(user.id, response_data, timeout=timer)
+        
 
         return Response(response_data)
 
@@ -260,3 +264,39 @@ class LogoutAPI(APIView):
             return Response({"message": "Logout successful"}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+from rest_framework.permissions import IsAuthenticated
+
+class DashboardAPI(APIView):
+    permission_classes = [IsAuthenticated]  # only logged-in users can see
+
+    def get(self, request):
+        user = get_object_or_404(User, username=request.user)
+        session = ExamSession.objects.filter(user=user).first() 
+       
+        exam_config = ExamConfig.objects.first()
+        if session is None:
+            exam_status= "none"
+        else:
+            if session.completed is False:
+                exam_status = "ongoing"
+            else:
+                exam_status = "completed"
+        from datetime import datetime
+        IST = pytz.timezone('Asia/Kolkata')
+        now_ist = datetime.now(IST)
+        if now_ist > exam_end:
+            exam_status = "completed"
+        print(exam_status)
+
+        if not exam_config:
+            return Response({"error": "No exam configured"}, status=status.HTTP_404_NOT_FOUND)
+
+        
+        
+        return Response({
+            "exam_name": "Power BI Exam",
+            "exam_start": exam_start,
+            "exam_status": exam_status,
+            "exam_end": exam_end,
+        }, status=status.HTTP_200_OK)

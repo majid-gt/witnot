@@ -1,6 +1,6 @@
 # urls.py
 from django.urls import path
-from .views import LoginAPI,ExamDataAPI,UpdateQuestionAPI,FinalSubmitAPI,FeedbackAPI,EndExpiredExamsAPI, LogoutAPI
+from .views import LoginAPI,ExamDataAPI,UpdateQuestionAPI,FinalSubmitAPI,FeedbackAPI,EndExpiredExamsAPI, LogoutAPI,DashboardAPI
 from rest_framework_simplejwt.views import TokenRefreshView
 import misstantra.settings as settings
 from django.conf import settings
@@ -14,6 +14,7 @@ urlpatterns = [
     path('api/exam/<str:rollno>/submit/', FinalSubmitAPI.as_view(), name='final-submit'),
     path('api/feedback/', FeedbackAPI.as_view(), name='feedback-api'),
     path('api/admin/end-expired-exams/', EndExpiredExamsAPI.as_view(), name='end_expired_exams'),
+    path('api/dashboard/', DashboardAPI.as_view(), name='dashboard_api'),
 ]
 
 

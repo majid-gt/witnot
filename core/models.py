@@ -15,6 +15,20 @@ class Question(models.Model):
     def __str__(self):
         return f"{self.text[:50]} ({self.marks} mark)"
 
+class IOTQuestion(models.Model):
+    MARK_CHOICES = [(1, '1 Mark'), (2, '2 Marks')]
+    text = models.TextField()
+    option_a = models.CharField(max_length=255)
+    option_b = models.CharField(max_length=255)
+    option_c = models.CharField(max_length=255)
+    option_d = models.CharField(max_length=255)
+    correct_answer = models.CharField(max_length=1, choices=[('A','A'),('B','B'),('C','C'),('D','D')])
+    marks = models.IntegerField(choices=MARK_CHOICES)
+    image_url = models.URLField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.text[:50]} ({self.marks} mark)"
+
 class ExamSession(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     questions = models.ManyToManyField(Question)

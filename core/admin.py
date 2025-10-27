@@ -63,6 +63,15 @@ class QuestionAdmin(admin.ModelAdmin):
     list_display = ('text', 'marks', 'correct_answer')
     search_fields = ('text',)
     list_filter = ('marks',)
+from django.contrib import admin
+from .models import Question, ExamSession, UserResponse, IOTQuestion
+
+# Register Question model
+@admin.register(IOTQuestion)
+class QuestionAdmin(admin.ModelAdmin):
+    list_display = ('text', 'marks', 'correct_answer')
+    search_fields = ('text',)
+    list_filter = ('marks',)
 
 # Register ExamSession model
 @admin.register(ExamSession)
