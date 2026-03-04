@@ -21,15 +21,22 @@ from datetime import datetime
 import pytz
 
 IST = pytz.timezone('Asia/Kolkata')
-now = timezone.now().astimezone(IST)
-config = ExamConfig.objects.first() 
 
-# Fixed exam start/end time (we will not touch them)
-#exam_start = IST.localize(datetime(2025, 10, 26, 23, 21))  # 10:30 AM IST
-#exam_end = IST.localize(datetime(2025, 10, 26, 23, 50)) 
-exam_start = config.exam_start.astimezone(IST)
-submission_start_ist = config.submission_start.astimezone(IST)
-exam_end = config.exam_end.astimezone(IST)
+def get_exam_times():
+    """
+    Safely fetch exam configuration from DB.
+    This prevents Django startup crashes before migrations.
+    """
+    config = ExamConfig.objects.first()
+    if not config:
+        return None, None, None
+
+    exam_start = config.exam_start.astimezone(IST)
+    submission_start_ist = config.submission_start.astimezone(IST)
+    exam_end = config.exam_end.astimezone(IST)
+
+    return exam_start, submission_start_ist, exam_end
+
 
 max_attempts = 10
 
@@ -76,8 +83,12 @@ class ExamDataAPI(APIView):
         user = get_object_or_404(User, username=rollno)
 
         # Check Redis first
-        print("Exam Config Times:", exam_start, exam_end,now)
-        
+        exam_start, submission_start_ist, exam_end = get_exam_times()
+
+        if not exam_start:
+            return Response({"error": "Exam configuration missing"}, status=500)
+
+        print("Exam Config Times:", exam_start, exam_end)        
 
         # Get or create exam session
         session, created = ExamSession.objects.get_or_create(
@@ -272,28 +283,35 @@ class DashboardAPI(APIView):
 
     def get(self, request):
         user = get_object_or_404(User, username=request.user)
-        session = ExamSession.objects.filter(user=user).first() 
-       
-        exam_config = ExamConfig.objects.first()
+        session = ExamSession.objects.filter(user=user).first()
+
+        # Get exam times safely from DB
+        exam_start, submission_start_ist, exam_end = get_exam_times()
+
+        if not exam_start:
+            return Response(
+                {"error": "No exam configured"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Determine exam status
         if session is None:
-            exam_status= "none"
+            exam_status = "none"
         else:
             if session.completed is False:
                 exam_status = "ongoing"
             else:
                 exam_status = "completed"
+
         from datetime import datetime
         IST = pytz.timezone('Asia/Kolkata')
         now_ist = datetime.now(IST)
+
         if now_ist > exam_end:
             exam_status = "completed"
+
         print(exam_status)
 
-        if not exam_config:
-            return Response({"error": "No exam configured"}, status=status.HTTP_404_NOT_FOUND)
-
-        
-        
         return Response({
             "exam_name": "Power BI Exam",
             "exam_start": exam_start,

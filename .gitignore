@@ -2,3 +2,60 @@
 __pycache__/
 *.xlsx
 *.pdf
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Environment variables
+.env
+.env.*
+
+# Django stuff
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Static files
+staticfiles/
+
+# Media files
+media/
+
+# Migrations cache
+*.pyo
+
+# IDEs
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Docker
+*.tar
+
+# Gunicorn
+gunicorn.pid
+
+# Redis dump
+dump.rdb
+
+# Kubernetes
+*.kubeconfig
+
+# Terraform (if used later)
+.terraform/
+terraform.tfstate*
